@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  miniapp:
+    build: .
+    restart: always
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - miniapp-network
+
+  cloudflared-miniapp:
+    image: cloudflare/cloudflared:latest
+    restart: always
+    command: tunnel --url http://miniapp:80
+    depends_on:
+      - miniapp
+    networks:
+      - miniapp-network
+
+networks:
+  miniapp-network:
+    driver: bridge

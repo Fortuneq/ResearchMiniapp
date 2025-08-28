@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Research Assistant</title>
+    <!-- Telegram Web App SDK will be loaded inline -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --tg-theme-bg-color: var(--tg-color-scheme);
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --shadow-soft: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-glow: 0 0 20px rgba(102, 126, 234, 0.3);
+            --border-radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--tg-theme-bg-color, #f8fafc);
+            color: var(--tg-theme-text-color, var(--text-primary));
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(118, 75, 162, 0.1) 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 24px 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: var(--primary-gradient);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        .logo-icon {
+            font-size: 36px;
+            color: white;
+            z-index: 1;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--tg-theme-hint-color, var(--text-secondary));
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .research-card {
+            background: var(--tg-theme-secondary-bg-color, rgba(255, 255, 255, 0.7));
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            box-shadow: var(--shadow-soft);
+            animation: slideUp 0.6s ease-out 0.2s both;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        .input-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--tg-theme-text-color, var(--text-primary));
+        }
+
+        .research-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid rgba(102, 126, 234, 0.1);
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            background: var(--tg-theme-bg-color, white);
+            color: var(--tg-theme-text-color, var(--text-primary));
+            transition: var(--transition);
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .research-input:focus {
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .research-input::placeholder {
+            color: var(--tg-theme-hint-color, var(--text-secondary));
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow), var(--shadow-soft);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .status-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 16px;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .status-card.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .status-card.success {
+            border-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .status-card.error {
+            border-color: var(--error-color);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .status-icon {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .status-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .status-message {
+            color: var(--tg-theme-hint-color, var(--text-secondary));
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .google-doc-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--tg-theme-link-color, #667eea);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            margin-top: 12px;
+            transition: var(--transition);
+        }
+
+        .google-doc-link:hover {
+            background: rgba(102, 126, 234, 0.2);
+            transform: translateX(4px);
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes shimmer {
+            to { transform: translate(50%, 50%); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @media (max-width: 375px) {
+            .container {
+                padding: 20px 16px;
+            }
+            
+            .research-card {
+                padding: 20px;
+            }
+            
+            .title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">🔬</div>
+            </div>
+            <h1 class="title">AI Research Assistant</h1>
+            <p class="subtitle">Получите персональный исследовательский отчет</p>
+        </header>
+
+        <main class="main-content">
+            <div class="research-card">
+                <div class="input-group">
+                    <label for="researchQuery" class="input-label">О чем вы хотите узнать?</label>
+                    <textarea 
+                        id="researchQuery" 
+                        class="research-input" 
+                        placeholder="Например: Анализ рынка криптовалют в 2025 году, тенденции развития ИИ, обзор стартап-экосистемы..."
+                        maxlength="500"
+                    ></textarea>
+                </div>
+                
+                <button id="submitBtn" class="submit-btn">
+                    <div class="btn-content">
+                        <span id="btnText">🚀 Начать исследование</span>
+                    </div>
+                </button>
+            </div>
+
+            <div id="statusCard" class="status-card">
+                <div id="statusIcon" class="status-icon"></div>
+                <div id="statusTitle" class="status-title"></div>
+                <div id="statusMessage" class="status-message"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Mock Telegram Web App for local testing
+        if (!window.Telegram) {
+            window.Telegram = {
+                WebApp: {
+                    ready: () => console.log('Telegram WebApp ready'),
+                    expand: () => console.log('Telegram WebApp expanded'),
+                    close: () => console.log('Telegram WebApp closed'),
+                    colorScheme: 'light',
+                    initDataUnsafe: {
+                        user: {
+                            id: 123456789,
+                            first_name: 'Test',
+                            username: 'testuser'
+                        }
+                    },
+                    HapticFeedback: {
+                        notificationOccurred: (type) => console.log('Haptic feedback:', type)
+                    },
+                    BackButton: {
+                        onClick: (callback) => console.log('Back button clicked')
+                    }
+                }
+            };
+        }
+
+        // Initialize Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        // Set theme colors
+        if (tg.colorScheme === 'dark') {
+            document.documentElement.style.setProperty('--text-primary', '#f9fafb');
+            document.documentElement.style.setProperty('--text-secondary', '#d1d5db');
+        }
+
+        // DOM elements
+        const submitBtn = document.getElementById('submitBtn');
+        const researchInput = document.getElementById('researchQuery');
+        const statusCard = document.getElementById('statusCard');
+        const statusIcon = document.getElementById('statusIcon');
+        const statusTitle = document.getElementById('statusTitle');
+        const statusMessage = document.getElementById('statusMessage');
+        const btnText = document.getElementById('btnText');
+
+        // Webhook URL - replace with your actual n8n webhook URL
+        const WEBHOOK_URL = 'https://maine-doug-all-commander.trycloudflare.com/webhook/***REMOVED***';
+
+        // Show status
+        function showStatus(type, title, message, docLink = null) {
+            statusCard.className = `status-card show ${type}`;
+            
+            const icons = {
+                loading: '⏳',
+                success: '✅',
+                error: '❌'
+            };
+            
+            statusIcon.textContent = icons[type];
+            statusTitle.textContent = title;
+            
+            if (docLink) {
+                statusMessage.innerHTML = `
+                    ${message}
+                    <a href="${docLink}" target="_blank" class="google-doc-link">
+                        📄 Открыть Google Документ
+                    </a>
+                `;
+            } else {
+                statusMessage.textContent = message;
+            }
+        }
+
+        // Hide status
+        function hideStatus() {
+            statusCard.classList.remove('show');
+        }
+
+        // Set loading state
+        function setLoading(loading) {
+            submitBtn.disabled = loading;
+            
+            if (loading) {
+                btnText.innerHTML = `
+                    <div class="loading-spinner"></div>
+                    <span>Исследую...</span>
+                `;
+            } else {
+                btnText.innerHTML = '🚀 Начать исследование';
+            }
+        }
+
+        // Submit research request
+        async function submitResearch() {
+            console.log('Submit button clicked');
+            const query = researchInput.value.trim();
+            console.log('Query:', query);
+            
+            if (!query) {
+                showStatus('error', 'Ошибка', 'Пожалуйста, введите запрос для исследования');
+                return;
+            }
+
+            setLoading(true);
+            hideStatus();
+
+            // Show loading status after a short delay
+            setTimeout(() => {
+                showStatus('loading', 'Обработка запроса', 'ИИ анализирует ваш запрос и собирает информацию...');
+            }, 500);
+
+            const requestData = {
+                query: query,
+                user: {
+                    id: tg.initDataUnsafe?.user?.id || 'anonymous',
+                    first_name: tg.initDataUnsafe?.user?.first_name || 'User',
+                    username: tg.initDataUnsafe?.user?.username || null
+                },
+                timestamp: new Date().toISOString()
+            };
+
+            console.log('Sending request to:', WEBHOOK_URL);
+            console.log('Request data:', requestData);
+
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Response data:', result);
+                
+                // Try to extract documentID or documentUrl from various possible response formats
+                let documentUrl = null;
+                
+                if (result.documentId) {
+                    documentUrl = `https://docs.google.com/document/d/${result.documentId}/edit`;
+                } else if (result.documentID) {
+                    documentUrl = `https://docs.google.com/document/d/${result.documentID}/edit`;
+                } else if (result.documentUrl) {
+                    documentUrl = result.documentUrl;
+                } else if (result.document_url) {
+                    documentUrl = result.document_url;
+                } else if (result.url) {
+                    documentUrl = result.url;
+                }
+                
+                console.log('Extracted document URL:', documentUrl);
+                
+                if (documentUrl) {
+                    showStatus(
+                        'success', 
+                        'Исследование готово!', 
+                        'Ваш персональный исследовательский отчет создан и готов к просмотру.',
+                        documentUrl
+                    );
+                    
+                    // Clear input
+                    researchInput.value = '';
+                    
+                    // Haptic feedback
+                    tg.HapticFeedback?.notificationOccurred('success');
+                    
+                } else {
+                    // Show response data for debugging
+                    console.log('Full response structure:', JSON.stringify(result, null, 2));
+                    showStatus(
+                        'success', 
+                        'Запрос выполнен!', 
+                        'Webhook ответил, но не найден documentID. Проверьте консоль для отладки.',
+                        null
+                    );
+                }
+
+            } catch (error) {
+                console.error('Research request failed:', error);
+                showStatus(
+                    'error', 
+                    'Ошибка подключения', 
+                    `Не удалось подключиться к серверу: ${error.message}`
+                );
+                
+                // Haptic feedback
+                tg.HapticFeedback?.notificationOccurred('error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Event listeners
+        submitBtn.addEventListener('click', submitResearch);
+
+        researchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                submitResearch();
+            }
+        });
+
+        // Auto-resize textarea
+        researchInput.addEventListener('input', () => {
+            researchInput.style.height = 'auto';
+            researchInput.style.height = Math.min(researchInput.scrollHeight, 200) + 'px';
+        });
+
+        // Focus input on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                researchInput.focus();
+            }, 300);
+        });
+
+        // Handle back button
+        tg.BackButton.onClick(() => {
+            tg.close();
+        });
+
+        // Telegram-specific interactions
+        if (tg.initDataUnsafe?.user) {
+            console.log('User loaded:', tg.initDataUnsafe.user);
+        }
+    </script>
+</body>
+</html>
